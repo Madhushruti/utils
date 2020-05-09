@@ -128,3 +128,81 @@ class Net(nn.Module):
         x = self.convblock8(x)
         x = x.view(-1, 10)
         return F.log_softmax(x)
+  
+class Net_Cifar10(nn.Module):
+    def __init__(self):
+        super(Net_Cifar10, self).__init__()
+
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=(3,3), padding=1, stride=1,dilation=2), 
+            nn.BatchNorm2d(32),
+            nn.ReLU()
+        )
+
+         #Kernel size= a(k-1)+1 => 2(3-1)+1="5" :a =dilation factor
+         #  RF=5X5 [RFin + (Ksize-1 * JMPin) => 1+(5-1)*1 =5]  :JMPin=1, Jout= JMPin X s = 1:With dilation in this layer
+        
+        self.pool1 = nn.MaxPool2d(2,2)      
+         #out=32 [(Cin +2(p)-Ksize)/S ==> (32 + 2 -3)+1/1  ] :With dilation in 1st layer
+         #RF=6X6[RFin + (Ksize-1 * JMPin) => 5+(2-1)*1 =6]  :JMPin=1, Jout= JMPin X s = 1*2= 2       
+        
+
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(3,3), padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU()    
+        )
+
+        #Kernel size= a(k-1)+1 => 2(3-1)+1="5" :a =dilation factor
+        #RF= 10X10 [RFin + (Ksize-1 * JMPin) => 6+(3-1)*2 =10]  :JMPin=2, Jout= JMPin X s = 2*1 =2
+        
+        
+        self.pool2 = nn.MaxPool2d(2,2)  
+         #  RF=12X12 [RFin + (Ksize-1 * JMPin) => 10+(2-1)*2 =12]  :JMPin=2, Jout= JMPin X s = 2X2=4 :   
+        
+        
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(3,3), padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU()    
+        )
+        #  RF=20X20 [RFin + (Ksize-1 * JMPin) => 12+(3-1)*4 =20]  :JMPin=4, Jout= JMPin X s = 4*1 =4
+        
+
+        self.pool3 = nn.MaxPool2d(2,2)
+        #  RF=28X28 [RFin + (Ksize-1 * JMPin) => 20+(3-1)*4 =28]  :JMPin=4, Jout= JMPin X s = 4*2 =8
+
+
+        self.conv4 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3,3),  groups=32),
+            nn.BatchNorm2d(32),
+            nn.ReLU()    
+        )      
+        #  RF=44X44 [RFin + (Ksize-1 * JMPin) => 28+(3-1)*8 =44]  :JMPin=8, Jout= JMPin X s = 8*1 =8
+        
+        self.conv5 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(1,1), padding=0),
+            nn.BatchNorm2d(64),
+            nn.ReLU()    
+        )  
+        #  RF=X [RFin + (Ksize-1 * JMPin) => 44+(1-1)*8 =44]  :JMPin=8, Jout= JMPin X s = 8*1 =8
+      
+      
+        self.avg_pool = nn.Sequential(nn.AvgPool2d(kernel_size=1))
+       #  RF=52X52 [RFin + (Ksize-1 * JMPin) => 44+(2-1)*8 =52] 
+        self.conv6= nn.Conv2d(64, 10, 1)#  
+  
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.pool1(x)
+        x = self.conv2(x)
+        x = self.pool2(x)
+        x = self.conv3(x)
+        x = self.pool3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)   
+        x = self.avg_pool(x)
+        x = self.conv6(x)
+        x = x.view(-1, 10)
+        return F.log_softmax(x)
